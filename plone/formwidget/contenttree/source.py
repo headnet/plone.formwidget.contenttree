@@ -68,9 +68,12 @@ class PathSource(object):
         self.context = context
         
         nav_root = getNavigationRootObject(context, None)
+
         query_builder = getMultiAdapter((nav_root, self),
                                         INavigationQueryBuilder)
-        query = query_builder()
+
+        nav_query = query_builder()
+        query = {'path': nav_query['path']}
 
         if navigation_tree_query is None:
             navigation_tree_query = {}
@@ -80,6 +83,7 @@ class PathSource(object):
         # selectable anyway and are unneeded to navigate to selectable items
         if ('path' not in navigation_tree_query
                 and 'path' in selectable_filter.criteria):
+
             navigation_tree_query['path'] = selectable_filter.criteria['path']
 
         query.update(navigation_tree_query)
