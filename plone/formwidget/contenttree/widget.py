@@ -29,6 +29,7 @@ from Products.Five.browser import BrowserView
 from plone.formwidget.contenttree.interfaces import IContentTreeWidget
 from plone.formwidget.contenttree import _
 from plone.formwidget.contenttree.utils import closest_content
+from plone.formwidget.contenttree.utils import startup_path
 
 
 class Fetch(BrowserView):
@@ -64,6 +65,30 @@ class Fetch(BrowserView):
         getSecurityManager().validate(content, content, view_name,
                                       view_instance)
 
+    def _children(self, query):
+        widget = self.context
+        context = widget.context
+        content = closest_content(context)
+        strategy = getMultiAdapter((content, widget), INavtreeStrategy)
+        catalog = getToolByName(content, 'portal_catalog')
+        navigate_to = startup_path(widget.field, content)
+
+        children = []
+        for brain in catalog(query):
+            newNode = {'item': brain,
+                       'depth': -1,  # not needed here
+                       'currentItem': False,
+                       'currentParent': False,
+                       'children': []}
+            if navigate_to.startswith(brain.getPath()):
+                query['path']['query']=brain.getPath()
+                newNode['children'] = self._children(query)
+            if strategy and strategy.nodeFilter(newNode):
+                newNode = strategy.decoratorFactory(newNode)
+                children.append(newNode)
+            
+        return children
+
     def __call__(self):
         # We want to check that the user was indeed allowed to access the
         # form for this widget. We can only this now, since security isn't
@@ -97,21 +122,7 @@ class Fetch(BrowserView):
         if 'is_default_page' not in navtree_query:
             navtree_query['is_default_page'] = False
 
-        content = closest_content(context)
-
-        strategy = getMultiAdapter((content, widget), INavtreeStrategy)
-        catalog = getToolByName(content, 'portal_catalog')
-
-        children = []
-        for brain in catalog(navtree_query):
-            newNode = {'item': brain,
-                       'depth': -1,  # not needed here
-                       'currentItem': False,
-                       'currentParent': False,
-                       'children': []}
-            if strategy.nodeFilter(newNode):
-                newNode = strategy.decoratorFactory(newNode)
-                children.append(newNode)
+        children = self._children(navtree_query)
 
         self.request.response.setHeader('X-Theme-Disabled', 'True')
 
@@ -277,7 +288,6 @@ class MultiContentTreeWidget(ContentTreeBase, AutocompleteMultiSelectionWidget):
     klass = u"contenttree-widget"
     multi_select = True
     display_template = ViewPageTemplateFile('display_multiple.pt')
-
 
 @implementer(z3c.form.interfaces.IFieldWidget)
 def ContentTreeFieldWidget(field, request):

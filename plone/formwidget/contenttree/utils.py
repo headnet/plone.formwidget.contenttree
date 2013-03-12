@@ -2,13 +2,15 @@ from Acquisition import aq_base
 from Products.CMFCore.interfaces import IContentish
 from Products.CMFCore.interfaces import IFolderish
 from zope.component.hooks import getSite
+
+from interfaces import STARTUP_PATH_KEY
+
 try:
     from zope.globalrequest import getRequest
     getRequest  # pyflakes
 except ImportError:
     # Fake it
     getRequest = object
-
 
 def closest_content(context=None):
     """Try to find a usable context, with increasing agression"""
@@ -46,3 +48,15 @@ def _valid_context(context):
         context = parent
 
     return None
+
+def startup_path(field, context):
+    if field.interface is None:
+        return ''
+
+    try:
+        path = field.interface.getTaggedValue(STARTUP_PATH_KEY)
+        if path == 'context':
+            return '/'.join(context.getPhysicalPath())
+        return path
+    except KeyError:
+        return ''

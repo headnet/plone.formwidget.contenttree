@@ -3,6 +3,7 @@ from zope import schema
 
 from z3c.formwidget.query.interfaces import IQuerySource
 
+STARTUP_PATH_KEY = u'plone.formwidget.contenttree.startuppath'
 
 class IContentFilter(Interface):
     """A filter that specifies what content is addable, where
