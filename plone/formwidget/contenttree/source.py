@@ -211,6 +211,8 @@ class PathSource(object):
 class ObjPathSource(PathSource):
 
     def _getBrainByValue(self, value):
+        if not ITraversable.providedBy(value):
+            return
         return self._getBrainByToken('/'.join(value.getPhysicalPath()))
 
     def getTermByBrain(self, brain, real_value=True):
