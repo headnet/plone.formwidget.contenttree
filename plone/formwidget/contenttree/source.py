@@ -6,6 +6,7 @@ from zope.component import getMultiAdapter
 
 from zope.schema.interfaces import IContextSourceBinder
 from zope.schema.vocabulary import SimpleTerm
+from z3c.form.interfaces import NO_VALUE
 
 from plone.app.layout.navigation.interfaces import INavigationQueryBuilder
 from plone.app.layout.navigation.root import getNavigationRootObject
@@ -139,6 +140,8 @@ class PathSource(object):
         return self.getTermByBrain(brain)
 
     def getTerm(self, value):
+        if value is NO_VALUE:
+            raise LookupError("No term available")
         brain = self._getBrainByValue(value)
         if brain is None:
             return self._placeholderTerm(value)
